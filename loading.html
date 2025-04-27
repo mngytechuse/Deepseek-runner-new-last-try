@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Your Book - B.Ed Educational Book Generator</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="py-4 text-center">
+            <h1 class="display-4">B.Ed Educational Book Generator</h1>
+            <p class="lead">Creating your educational book</p>
+        </header>
+
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div id="processing">
+                            <h2 class="mb-4">Generating Your Book</h2>
+                            <div class="spinner-border text-primary mb-4" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="progress mb-4">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p id="statusMessage">Initializing book generation...</p>
+                            <p class="text-muted"><small>This may take a few minutes. Please don't close this page.</small></p>
+                        </div>
+
+                        <div id="completed" style="display: none;">
+                            <h2 class="mb-4 text-success">Your Book is Ready!</h2>
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                            <p class="my-4">Your educational book has been successfully generated.</p>
+                            
+                            <div class="row justify-content-center">
+                                <div class="col-md-6 mb-3">
+                                    <a id="downloadDocx" href="#" class="btn btn-primary w-100" target="_blank" download>
+                                        <i class="fas fa-file-word me-2"></i>Download DOCX
+                                    </a>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <a id="downloadPdf" href="#" class="btn btn-danger w-100" target="_blank" download>
+                                        <i class="fas fa-file-pdf me-2"></i>Download PDF
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <a href="{{ url_for('reset') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-redo me-2"></i>Generate Another Book
+                                </a>
+                            </div>
+                        </div>
+
+                        <div id="error" style="display: none;">
+                            <h2 class="mb-4 text-danger">Error</h2>
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                            <p id="errorMessage" class="my-4">An error occurred while generating your book.</p>
+                            
+                            <div class="mt-4">
+                                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center py-4">
+            <p>B.Ed Educational Book Generator for Indian Educators</p>
+            <p><small>Providing quality educational content for B.Ed students</small></p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bookId = "{{ book_id }}";
+            let progress = 0;
+            const progressBar = document.getElementById('progressBar');
+            const statusMessage = document.getElementById('statusMessage');
+            const processingDiv = document.getElementById('processing');
+            const completedDiv = document.getElementById('completed');
+            const errorDiv = document.getElementById('error');
+            const errorMessage = document.getElementById('errorMessage');
+            const downloadDocx = document.getElementById('downloadDocx');
+            const downloadPdf = document.getElementById('downloadPdf');
+
+            // Set up download handlers with fetch API
+            if (downloadDocx) {
+                downloadDocx.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Downloading DOCX file...');
+                    
+                    // Show downloading indicator
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Downloading...';
+                    this.disabled = true;
+                    
+                    // Use fetch to get the file as a blob
+                    fetch(`/download/${bookId}/docx`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.blob();
+                        })
+                        .then(blob => {
+                            // Create a link element and trigger download
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = `${document.title.replace(' - B.Ed Educational Book Generator', '')}_book.docx`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            
+                            // Restore button
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error downloading file:', error);
+                            
+                            // Restore button and show error
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                            alert('Error downloading file. Please try again.');
+                        });
+                });
+            }
+            
+            if (downloadPdf) {
+                downloadPdf.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Downloading PDF file...');
+                    
+                    // Show downloading indicator
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Downloading...';
+                    this.disabled = true;
+                    
+                    // Use fetch to get the file as a blob
+                    fetch(`/download/${bookId}/pdf`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.blob();
+                        })
+                        .then(blob => {
+                            // Create a link element and trigger download
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = `${document.title.replace(' - B.Ed Educational Book Generator', '')}_book.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            
+                            // Restore button
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error downloading file:', error);
+                            
+                            // Restore button and show error
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                            alert('Error downloading file. Please try again.');
+                        });
+                });
+            }
+
+            // Function to update progress simulation
+            function updateProgress() {
+                // Calculate progress incrementally
+                if (progress < 90) {
+                    progress += Math.random() * 5;
+                    progress = Math.min(progress, 90); // Cap at 90% until we're done
+                    
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.setAttribute('aria-valuenow', progress);
+                    
+                    // Update status message based on progress
+                    if (progress < 20) {
+                        statusMessage.textContent = "Analyzing syllabus content...";
+                    } else if (progress < 40) {
+                        statusMessage.textContent = "Organizing topics and chapters...";
+                    } else if (progress < 60) {
+                        statusMessage.textContent = "Generating educational content...";
+                    } else if (progress < 80) {
+                        statusMessage.textContent = "Creating questions and answers...";
+                    } else {
+                        statusMessage.textContent = "Finalizing your book...";
+                    }
+                }
+            }
+
+            // Start progress simulation
+            const progressInterval = setInterval(updateProgress, 1000);
+
+            // Start the book generation process
+            fetch(`/process-book/${bookId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                
+                if (data.status === 'success') {
+                    // Book generation was successful
+                    progressBar.style.width = '100%';
+                    progressBar.setAttribute('aria-valuenow', 100);
+                    
+                    // Show completed state
+                    setTimeout(() => {
+                        processingDiv.style.display = 'none';
+                        completedDiv.style.display = 'block';
+                    }, 1000);
+                } else {
+                    // Handle errors
+                    errorMessage.textContent = data.error || 'An unexpected error occurred.';
+                    processingDiv.style.display = 'none';
+                    errorDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                
+                // Handle fetch errors
+                errorMessage.textContent = 'Network error. Please try again.';
+                processingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+                
+                console.error('Error:', error);
+            });
+
+            // Also check the status periodically
+            const checkStatus = () => {
+                fetch(`/status/${bookId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        clearInterval(statusInterval);
+                    }
+                })
+                .catch(error => {
+                    console.error('Status check error:', error);
+                });
+            };
+
+            const statusInterval = setInterval(checkStatus, 5000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+Improve topic extraction from syllabus content for broader subject coverage
+
+Refactor `extract_topics` in `book_generator.py` to enhance topic identification from varied syllabus formats, returning up to 10 topics.
+
+Replit-Commit-Author: Agent
+Replit-Commit-Session-Id: 88cf2cb3-293d-4df3-890c-d0143bda65f0
+Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/c5d3d2f0-8907-4a5d-857e-d56fe0dd864e/152b3f77-b56c-48e3-9105-b7c78fc68999.jpg
